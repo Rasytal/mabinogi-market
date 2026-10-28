@@ -1,7 +1,7 @@
 {
   "schema": 1,
-  "release": 20261028074546,
-  "version": "0.83-local.105",
-  "package": "mlb-0.83-local.105-f97d9f097d5f.zip",
-  "sha256": "f97d9f097d5fa29e207a3ad52f542320d9ac95476edd7da8a30731153e3c8bbf"
+  "release": 20261028082530,
+  "version": "0.83-local.106",
+  "package": "mlb-0.83-local.106-c82a5ef4c873.zip",
+  "sha256": "c82a5ef4c873278ce38553c08d86235de35e66d5ed0a23d1614283667b791595"
 }
