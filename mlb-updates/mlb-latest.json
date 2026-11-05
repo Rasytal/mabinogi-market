@@ -1,7 +1,7 @@
 {
   "schema": 1,
-  "release": 20261105043246,
-  "version": "0.83-local.181-offline-nolog",
-  "package": "mlb-0.83-local.181-offline-nolog-0fd39926623a.zip",
-  "sha256": "0fd39926623a888de77a4fcd5b57230f15762c81ea8bbe3ca9bfba110f867cdb"
+  "release": 20261105045251,
+  "version": "0.83-local.182-offline-nolog",
+  "package": "mlb-0.83-local.182-offline-nolog-80b1ed1db35d.zip",
+  "sha256": "80b1ed1db35daaf4c79e92420b420eaa207d53f740e95426c35976ca46155538"
 }
