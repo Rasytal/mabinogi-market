@@ -1,0 +1,447 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#14171c">
+<meta name="robots" content="noindex,nofollow">
+<title>MLB 원격</title>
+<style>
+/* 레이아웃: 한 줄에 한 대씩 쌓이는 PC 카드 목록(폰 우선), 넓은 화면에서는 2~3열 */
+:root {
+  --bg: #f3f5f7;
+  --surface: #ffffff;
+  --surface-2: #e9edf1;
+  --fg: #16202a;
+  --muted: #5d6b79;
+  --line: #d6dce2;
+  --ok: #0d8a63;
+  --ok-bg: #d9f2e8;
+  --off: #5d6b79;
+  --off-bg: #e3e8ec;
+  --bad: #c0392b;
+  --bad-bg: #fbe0dc;
+  --accent: #1f6feb;
+  --font: system-ui, -apple-system, "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif;
+  --mono: ui-monospace, "SF Mono", Consolas, "Malgun Gothic", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #101317;
+    --surface: #1a1f26;
+    --surface-2: #232a33;
+    --fg: #e7ecf1;
+    --muted: #93a1b0;
+    --line: #2b333d;
+    --ok: #3ad0a0;
+    --ok-bg: #12382d;
+    --off: #93a1b0;
+    --off-bg: #262d36;
+    --bad: #ff7a6b;
+    --bad-bg: #44211d;
+    --accent: #6aa3ff;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #101317;
+  --surface: #1a1f26;
+  --surface-2: #232a33;
+  --fg: #e7ecf1;
+  --muted: #93a1b0;
+  --line: #2b333d;
+  --ok: #3ad0a0;
+  --ok-bg: #12382d;
+  --off: #93a1b0;
+  --off-bg: #262d36;
+  --bad: #ff7a6b;
+  --bad-bg: #44211d;
+  --accent: #6aa3ff;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font);
+  font-size: 15px;
+  line-height: 1.45;
+  padding-block: max(14px, env(safe-area-inset-top, 0px)) max(24px, env(safe-area-inset-bottom, 0px));
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  min-height: 100vh;
+}
+button, input { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.wrap { max-width: 1100px; margin: 0 auto; }
+
+/* 로그인 */
+.login { max-width: 360px; margin: 14vh auto 0; display: grid; gap: 14px; }
+.login h1 { font-size: 22px; margin: 0; }
+.login p { margin: 0; color: var(--muted); }
+.field { display: grid; gap: 6px; }
+.field label { font-size: 13px; color: var(--muted); }
+.field input {
+  width: 100%; padding: 12px 13px; border-radius: 8px;
+  border: 1px solid var(--line); background: var(--surface);
+}
+.btn {
+  padding: 12px 16px; border-radius: 8px; border: 1px solid transparent;
+  background: var(--accent); color: #fff; font-weight: 600; cursor: pointer;
+}
+.btn:disabled { opacity: .6; cursor: default; }
+.actions { display: flex; gap: 8px; margin-top: 12px; }
+.actions .btn { flex: 1; padding: 12px 8px; }
+.btn.go { background: var(--ok); color: #fff; }
+.btn.stop { background: var(--bad-bg); color: var(--bad); border-color: var(--bad); }
+.toast { position: fixed; left: 16px; right: 16px; bottom: 20px; background: var(--fg); color: var(--bg); border-radius: 10px; padding: 12px 14px; font-size: 14px; z-index: 9; box-shadow: 0 4px 16px rgba(0,0,0,.25); }
+.sel { flex: 1; min-width: 0; font: inherit; font-size: 15px; padding: 9px 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); }
+.btn.ghost { background: transparent; border-color: var(--line); color: var(--fg); font-weight: 500; padding: 8px 12px; }
+.err { color: var(--bad); min-height: 1.4em; font-size: 14px; }
+
+/* 상단 */
+.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 4px; }
+.top h1 { font-size: 20px; margin: 0; }
+.top .acts { display: flex; gap: 8px; }
+.summary { color: var(--muted); font-size: 14px; margin: 2px 0 14px; display: flex; flex-wrap: wrap; gap: 4px 14px; }
+.summary b { color: var(--fg); font-variant-numeric: tabular-nums; }
+.banner { background: var(--bad-bg); color: var(--bad); border-radius: 8px; padding: 10px 12px; margin-bottom: 12px; font-size: 14px; }
+
+/* 카드 */
+.grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px; display: grid; gap: 10px; min-width: 0; }
+.card.dim .count, .card.dim .stage { opacity: .55; }
+.row1 { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-width: 0; }
+.name { font-size: 17px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pcid { font-size: 12px; color: var(--muted); font-family: var(--mono); }
+.chip { flex: none; font-size: 13px; font-weight: 600; padding: 3px 10px; border-radius: 999px; }
+.chip.ok { background: var(--ok-bg); color: var(--ok); }
+.chip.off { background: var(--off-bg); color: var(--off); }
+.chip.bad { background: var(--bad-bg); color: var(--bad); }
+.row2 { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+.count { font-size: 34px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -.5px; line-height: 1; }
+.count small { font-size: 14px; font-weight: 500; color: var(--muted); margin-left: 3px; letter-spacing: 0; }
+.kv { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.kv b { color: var(--fg); font-weight: 600; }
+.stage { font-size: 14px; background: var(--surface-2); border-radius: 8px; padding: 8px 10px; overflow-wrap: anywhere; min-width: 0; }
+.meta { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.meta .stale { color: var(--bad); font-weight: 600; }
+.empty { color: var(--muted); text-align: center; padding: 40px 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <form class="login" id="loginView" hidden>
+    <h1>MLB 원격</h1>
+    <p>폰용 계정으로 로그인하세요.</p>
+    <div class="field"><label for="email">이메일</label>
+      <input id="email" type="email" autocomplete="username" inputmode="email" required></div>
+    <div class="field"><label for="password">비밀번호</label>
+      <input id="password" type="password" autocomplete="current-password" required></div>
+    <div class="err" id="loginErr" role="alert"></div>
+    <button class="btn" id="loginBtn" type="submit">로그인</button>
+  </form>
+
+  <main id="mainView" hidden>
+    <div class="top">
+      <h1>MLB 원격</h1>
+      <div class="acts">
+        <button class="btn ghost" id="refreshBtn" type="button">새로고침</button>
+        <button class="btn ghost" id="logoutBtn" type="button">로그아웃</button>
+      </div>
+    </div>
+    <div class="summary" id="summary"></div>
+    <div class="banner" id="banner" hidden></div>
+    <div class="grid" id="grid"></div>
+  </main>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var SB_URL = "https://tjprcaefwahiepkxilvn.supabase.co";
+  var SB_KEY = "sb_publishable_BAe3cGrpuRTjXpYLkw8nYQ_bwFC-m2q";
+  var STORE = "mlbremote.session";
+  var POLL_MS = 10000;
+  var STALE_SEC = 120;   // 보고기는 30초마다 올리므로 2분 넘게 없으면 끊김으로 봄
+
+  var session = null, pollTimer = null, busy = false;
+  var $ = function (id) { return document.getElementById(id); };
+
+  function readStore() { try { return JSON.parse(localStorage.getItem(STORE) || "null"); } catch (e) { return null; } }
+  function writeStore(v) { try { if (v) localStorage.setItem(STORE, JSON.stringify(v)); else localStorage.removeItem(STORE); } catch (e) {} }
+
+  function show(which) { $("loginView").hidden = which !== "login"; $("mainView").hidden = which !== "main"; }
+
+  function authCall(grant, body) {
+    return fetch(SB_URL + "/auth/v1/token?grant_type=" + grant, {
+      method: "POST",
+      headers: { apikey: SB_KEY, "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    }).then(function (r) {
+      return r.json().then(function (j) {
+        if (!r.ok) { var e = new Error(j.error_description || j.msg || j.message || "로그인 실패"); e.status = r.status; throw e; }
+        return j;
+      });
+    });
+  }
+  function takeSession(j) {
+    session = { access: j.access_token, refresh: j.refresh_token, exp: Math.floor(Date.now() / 1000) + (j.expires_in || 3600) };
+    writeStore({ refresh: session.refresh });
+  }
+  function refreshSession() {
+    var rt = (session && session.refresh) || (readStore() || {}).refresh;
+    if (!rt) return Promise.reject(new Error("no-session"));
+    return authCall("refresh_token", { refresh_token: rt }).then(takeSession);
+  }
+  function ensureToken() {
+    if (session && session.exp - 60 > Date.now() / 1000) return Promise.resolve();
+    return refreshSession();
+  }
+
+  function fetchRows() {
+    return ensureToken().then(function () {
+      return fetch(SB_URL + "/rest/v1/pc_status?select=*&order=nickname.asc", {
+        headers: { apikey: SB_KEY, Authorization: "Bearer " + session.access }
+      });
+    }).then(function (r) {
+      if (r.status === 401) { var e = new Error("auth"); e.auth = true; throw e; }
+      if (!r.ok) throw new Error("서버 응답 " + r.status);
+      return r.json();
+    });
+  }
+
+  function ageText(sec) {
+    if (sec < 90) return sec + "초 전";
+    if (sec < 3600) return Math.floor(sec / 60) + "분 전";
+    if (sec < 86400) return Math.floor(sec / 3600) + "시간 전";
+    return Math.floor(sec / 86400) + "일 전";
+  }
+  function el(tag, cls, text) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text != null) n.textContent = text;
+    return n;
+  }
+
+  var infSel = {};
+  function todayStr() { var d = new Date(); return d.getFullYear() + "-" + ("0" + (d.getMonth() + 1)).slice(-2) + "-" + ("0" + d.getDate()).slice(-2); }
+  // 마지막으로 무한 시작이 성공한 {date, ch} 기록으로 오늘 캐릭터를 정함: 같은 날이면 그대로, 날이 바뀌면 +1 (5 다음은 1)
+  function pickCh(last, today) {
+    if (!last || !(last.ch >= 1 && last.ch <= 5)) return 1;
+    return last.date === today ? last.ch : (last.ch % 5) + 1;
+  }
+  function readLast(id) { try { var v = JSON.parse(localStorage.getItem("mlbInfLast:" + id) || "null"); if (v && typeof v.date === "string") return v; } catch (e) {} return null; }
+  function writeLast(id, ch) { try { localStorage.setItem("mlbInfLast:" + id, JSON.stringify({ date: todayStr(), ch: ch })); } catch (e) {} }
+  function readInf(id) {
+    var ix = 5;
+    try { var v = JSON.parse(localStorage.getItem("mlbInf:" + id) || "null"); if (v && v.ix >= 1 && v.ix <= 6) ix = v.ix; } catch (e) {}
+    return { ch: pickCh(readLast(id), todayStr()), ix: ix, day: todayStr() };
+  }
+  function writeInf(id, v) { try { localStorage.setItem("mlbInf:" + id, JSON.stringify({ ix: v.ix })); } catch (e) {} }
+  function render(rows) {
+    var grid = $("grid");
+    grid.textContent = "";
+    var run = 0, off = 0, lost = 0, now = Date.now();
+    if (!rows.length) { grid.appendChild(el("div", "empty", "아직 올라온 PC가 없어요.")); }
+    rows.forEach(function (p) {
+      var age = Math.max(0, Math.round((now - Date.parse(p.updated_at)) / 1000));
+      var stale = !(age < STALE_SEC);
+      var state = stale ? "bad" : (p.mlb_running ? "ok" : "off");
+      var label = stale ? "신호 끊김" : (p.mlb_running ? "실행" : "MLB 꺼짐");
+      if (state === "ok") run++; else if (state === "off") off++; else lost++;
+
+      var card = el("div", "card" + (state === "ok" ? "" : " dim"));
+      var r1 = el("div", "row1");
+      var left = el("div"); left.style.minWidth = "0";
+      left.appendChild(el("div", "name", p.nickname || p.pc_id));
+      left.appendChild(el("div", "pcid", p.pc_id));
+      r1.appendChild(left);
+      r1.appendChild(el("span", "chip " + state, label));
+      card.appendChild(r1);
+
+      var r2 = el("div", "row2");
+      var inf = p.stage && String(p.stage).indexOf("무한") === 0;
+      var c = el("div", "count", p.infinite_count == null ? "–" : String(p.infinite_count));
+      c.appendChild(el("small", null, "판"));
+      if (!inf && p.mlb_running) c.style.opacity = ".45";
+      var cw = el("div"); cw.style.minWidth = "0";
+      cw.appendChild(el("div", "pcid", (inf || !p.mlb_running) ? "무한" : "마지막 무한"));
+      cw.appendChild(c);
+      r2.appendChild(cw);
+      var kv = el("div", "kv");
+      kv.appendChild(document.createTextNode("재시작 "));
+      kv.appendChild(el("b", null, String(p.restart_count == null ? 0 : p.restart_count)));
+      r2.appendChild(kv);
+      card.appendChild(r2);
+
+      if (p.stage) card.appendChild(el("div", "stage", p.stage));
+
+      var meta = el("div", "meta");
+      if (p.daily) meta.appendChild(el("span", null, "일일 " + p.daily));
+      if (p.version) meta.appendChild(el("span", null, "v" + p.version));
+      meta.appendChild(el("span", stale ? "stale" : null, "신호 " + ageText(age)));
+      card.appendChild(meta);
+
+      var act = el("div", "actions");
+      var bGo = el("button", "btn go", "MLB 시작"); bGo.type = "button";
+      var bStop = el("button", "btn stop", "MLB 종료"); bStop.type = "button";
+      if (stale) { bGo.disabled = true; bStop.disabled = true; }
+      bGo.addEventListener("click", function () { sendCmd(p, "start"); });
+      bStop.addEventListener("click", function () { sendCmd(p, "stop"); });
+      act.appendChild(bGo); act.appendChild(bStop);
+      card.appendChild(act);
+      var pre = el("div", "actions");
+      [["일일", "daily"], ["일일+뱅가드", "daily_vanguard"], ["일요일 촉매", "sunday_catalyst"]].forEach(function (x) {
+        var b = el("button", "btn ghost", x[0]); b.type = "button";
+        if (stale) b.disabled = true;
+        b.addEventListener("click", function () { sendCmd(p, x[1]); });
+        pre.appendChild(b);
+      });
+      card.appendChild(el("div", "meta", "프리셋으로 시작"));
+      card.appendChild(pre);
+      // 무한 시작: 캐릭터 선택창에서 [캐릭터 + 심층 던전 이름] 고르고 시작 (부컴은 1번 고정)
+      var INF_NAMES = ["망령", "원념", "야생", "삼림", "공명", "파동"];
+      var isSub = ["당피", "니미니"].indexOf(p.nickname) >= 0;
+      var sv = infSel[p.pc_id] || (infSel[p.pc_id] = readInf(p.pc_id));
+      if (sv.day !== todayStr()) { sv.ch = pickCh(readLast(p.pc_id), todayStr()); sv.day = todayStr(); }
+      card.appendChild(el("div", "meta", "무한 시작 (캐릭터 선택창에서)"));
+      var ia = el("div", "actions");
+      var chSel = null;
+      if (!isSub) {
+        chSel = el("select", "sel");
+        for (var ci = 1; ci <= 5; ci++) { var o1 = el("option", null, ci + "번 캐릭"); o1.value = String(ci); chSel.appendChild(o1); }
+        chSel.value = String(sv.ch);
+        chSel.addEventListener("change", function () { sv.ch = Number(chSel.value) || 1; writeInf(p.pc_id, sv); });
+        ia.appendChild(chSel);
+      }
+      var dgSel = el("select", "sel");
+      INF_NAMES.forEach(function (nm, i) { var o2 = el("option", null, nm); o2.value = String(i + 1); dgSel.appendChild(o2); });
+      dgSel.value = String(sv.ix);
+      dgSel.addEventListener("change", function () { sv.ix = Number(dgSel.value) || 5; writeInf(p.pc_id, sv); });
+      ia.appendChild(dgSel);
+      var bInf = el("button", "btn ghost", "무한 시작"); bInf.type = "button";
+      if (stale) bInf.disabled = true;
+      bInf.addEventListener("click", function () { sendCmd(p, "inf:" + (isSub ? 1 : sv.ch) + ":" + sv.ix); });
+      ia.appendChild(bInf);
+      card.appendChild(ia);
+      var act2 = el("div", "actions");
+      var bBoot = el("button", "btn ghost", "PC 재부팅"); bBoot.type = "button";
+      if (stale) bBoot.disabled = true;
+      bBoot.addEventListener("click", function () { sendCmd(p, "reboot"); });
+      act2.appendChild(bBoot);
+      card.appendChild(act2);
+      var act3 = el("div", "actions");
+      var bCs = el("button", "btn ghost", "캐선창으로"); bCs.type = "button";
+      if (stale) bCs.disabled = true;
+      bCs.addEventListener("click", function () { sendCmd(p, "charselect"); });
+      act3.appendChild(bCs);
+      card.appendChild(act3);
+      grid.appendChild(card);
+    });
+
+    var s = $("summary"); s.textContent = "";
+    [["실행", run], ["꺼짐", off], ["신호 끊김", lost]].forEach(function (x) {
+      var sp = el("span"); sp.appendChild(document.createTextNode(x[0] + " "));
+      sp.appendChild(el("b", null, String(x[1]))); s.appendChild(sp);
+    });
+  }
+
+  var toastEl = null, toastTimer = null;
+  function toast(msg, keep) {
+    if (!toastEl) { toastEl = el("div", "toast"); document.body.appendChild(toastEl); }
+    toastEl.textContent = msg; toastEl.hidden = false;
+    if (toastTimer) clearTimeout(toastTimer);
+    if (!keep) toastTimer = setTimeout(function () { toastEl.hidden = true; }, 6000);
+  }
+  var cmdBusy = false;
+  function sendCmd(p, cmd) {
+    var name = p.nickname || p.pc_id;
+    if (cmdBusy) { toast("이전 명령을 처리 중이에요. 잠시만요."); return; }
+    var presetNames = { daily: "일일", daily_vanguard: "일일+뱅가드", sunday_catalyst: "일요일 촉매" };
+    var infM = /^inf:([1-6]):([1-6])$/.exec(cmd);
+    var infNames = ["망령", "원념", "야생", "삼림", "공명", "파동"];
+    var word = cmd === "stop" ? "종료" : (cmd === "reboot" ? "재부팅" : (cmd === "charselect" ? "캐선창 이동" : (infM ? "무한 시작" : (presetNames[cmd] ? presetNames[cmd] + " 시작" : "시작"))));
+    if (infM && !confirm(name + ": " + infM[1] + "번 캐릭터, '" + infNames[Number(infM[2]) - 1] + "' 무한을 시작할까요?\n캐릭터 선택창에 있을 때만 누르세요. 무한이 돌고 있으면 취소하세요.")) return;
+    if (presetNames[cmd] && !confirm(name + ": '" + presetNames[cmd] + "' 설정으로 바로 시작할까요?")) return;
+    if (cmd === "stop" && !confirm(name + "의 MLB를 종료할까요?")) return;
+    if (cmd === "charselect" && !confirm(name + ": 게임을 캐릭터 선택창으로 보낼까요?\nMLB는 정지되고, 그 PC의 마우스가 잠깐 움직여요. 전투나 팝업 중이면 실패할 수 있어요.")) return;
+    if (cmd === "reboot") {
+      if (!confirm(name + " PC를 재부팅할까요?\nMLB 진행이 끊기고, 윈도우가 다시 켜질 때까지 몇 분 걸려요.")) return;
+      if (!confirm("정말 재부팅할까요? (마지막 확인)")) return;
+    }
+    cmdBusy = true;
+    toast(name + ": " + word + " 명령 보내는 중…", true);
+    ensureToken().then(function () {
+      return fetch(SB_URL + "/rest/v1/pc_commands", {
+        method: "POST",
+        headers: { apikey: SB_KEY, Authorization: "Bearer " + session.access, "Content-Type": "application/json", Prefer: "return=representation" },
+        body: JSON.stringify({ pc_id: p.pc_id, command: cmd })
+      });
+    }).then(function (r) {
+      if (!r.ok) throw new Error("명령을 보내지 못했어요 (" + r.status + ")");
+      return r.json();
+    }).then(function (rows) {
+      var id = rows[0].id, tries = 0;
+      toast(name + ": " + word + " 명령 전달됨 · PC가 처리하길 기다리는 중…", true);
+      (function poll() {
+        tries++;
+        ensureToken().then(function () {
+          return fetch(SB_URL + "/rest/v1/pc_commands?select=status,result&id=eq." + id, {
+            headers: { apikey: SB_KEY, Authorization: "Bearer " + session.access }
+          });
+        }).then(function (r) { return r.json(); }).then(function (a) {
+          var c = a && a[0];
+          if (c && c.status !== "pending") {
+            if (infM && c.status === "done") writeLast(p.pc_id, Number(infM[1]));
+            toast(name + ": " + (c.status === "done" ? "✔ " : "✖ ") + (c.result || c.status));
+            cmdBusy = false; tick(); return;
+          }
+          if (tries >= 45) { toast(name + ": 아직 응답이 없어요. PC가 꺼졌거나 보고기가 멈췄을 수 있어요."); cmdBusy = false; return; }
+          setTimeout(poll, 3000);
+        }).catch(function () {
+          if (tries >= 30) { cmdBusy = false; toast("응답 확인에 실패했어요."); return; }
+          setTimeout(poll, 3000);
+        });
+      })();
+    }).catch(function (e) { toast(e.message || "명령을 보내지 못했어요."); cmdBusy = false; });
+  }
+
+  function setBanner(msg) { var b = $("banner"); b.hidden = !msg; b.textContent = msg || ""; }
+
+  function tick() {
+    if (busy || !session && !readStore()) return;
+    busy = true;
+    fetchRows().then(function (rows) { setBanner(""); if (!(document.activeElement && document.activeElement.tagName === "SELECT")) render(rows); })
+      .catch(function (e) {
+        if (e && (e.auth || e.message === "no-session" || e.status === 400 || e.status === 401)) { logout(); return; }
+        setBanner("연결이 불안정해요. 마지막으로 받은 값을 보여주는 중이에요.");
+      })
+      .then(function () { busy = false; });
+  }
+  function startPoll() { stopPoll(); tick(); pollTimer = setInterval(function () { if (!document.hidden) tick(); }, POLL_MS); }
+  function stopPoll() { if (pollTimer) clearInterval(pollTimer); pollTimer = null; }
+  function logout() { stopPoll(); session = null; writeStore(null); $("grid").textContent = ""; show("login"); }
+
+  $("loginView").addEventListener("submit", function (ev) {
+    ev.preventDefault();
+    var btn = $("loginBtn"); btn.disabled = true; $("loginErr").textContent = "";
+    authCall("password", { email: $("email").value.trim(), password: $("password").value })
+      .then(function (j) { takeSession(j); $("password").value = ""; show("main"); startPoll(); })
+      .catch(function (e) { $("loginErr").textContent = e.status === 400 ? "이메일이나 비밀번호가 맞지 않아요." : "로그인하지 못했어요. 잠시 뒤 다시 해보세요."; })
+      .then(function () { btn.disabled = false; });
+  });
+  $("logoutBtn").addEventListener("click", logout);
+  $("refreshBtn").addEventListener("click", tick);
+  document.addEventListener("visibilitychange", function () { if (!document.hidden && !$("mainView").hidden) tick(); });
+
+  if (readStore()) { show("main"); startPoll(); } else { show("login"); }
+})();
+</script>
+</body>
+</html>
