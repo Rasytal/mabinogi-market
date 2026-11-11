@@ -296,15 +296,6 @@ button, input { font: inherit; color: inherit; }
       bStop.addEventListener("click", function () { sendCmd(p, "stop"); });
       act.appendChild(bGo); act.appendChild(bStop);
       card.appendChild(act);
-      var pre = el("div", "actions");
-      [["일일", "daily"], ["일일+뱅가드", "daily_vanguard"], ["일요일 촉매", "sunday_catalyst"]].forEach(function (x) {
-        var b = el("button", "btn ghost", x[0]); b.type = "button";
-        if (stale) b.disabled = true;
-        b.addEventListener("click", function () { sendCmd(p, x[1]); });
-        pre.appendChild(b);
-      });
-      card.appendChild(el("div", "meta", "프리셋으로 시작"));
-      card.appendChild(pre);
       // 무한 시작: 캐릭터 선택창에서 [캐릭터 + 심층 던전 이름] 고르고 시작 (부컴은 1번 고정)
       var INF_NAMES = ["망령", "원념", "야생", "삼림", "공명", "파동"];
       var isSub = ["당피", "니미니"].indexOf(p.nickname) >= 0;
